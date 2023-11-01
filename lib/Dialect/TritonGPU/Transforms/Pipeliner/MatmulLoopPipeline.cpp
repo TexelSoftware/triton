@@ -691,7 +691,7 @@ static void removeExtraWait(tt::nvidia_gpu::DotWaitOp dotWaitOp,
 
 void mlir::triton::asyncLaunchDots(scf::ForOp forOp) {
   Block *loop = forOp.getBody();
-  auto getBlockNumInFor = [](Operation *op, scf::ForOp forOp) {
+  auto getBlockNumInFor = [](Operation *op, scf::ForOp forOp) -> int64_t {
     if (!op)
       return -1l;
     auto lastOp = op;

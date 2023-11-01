@@ -109,11 +109,15 @@ def _path_to_binary(binary: str):
     base_dir = os.path.join(os.path.dirname(__file__), os.pardir)
     paths = [
         os.environ.get(f"TRITON_{binary.upper()}_PATH", ""),
-        os.path.join(base_dir, "third_party", "cuda", "bin", binary)
+        os.path.join(base_dir, "third_party", "cuda", "bin", binary),
+        os.path.join(os.environ.get(f"CUDA_PATH", ""), "bin", binary)
     ]
 
     for p in paths:
-        bin = p.split(" ")[0]
+        if os.name == "nt":
+            bin = p + '.exe'
+        else:
+            bin = p.split(" ")[0]
         if os.path.exists(bin) and os.path.isfile(bin):
             result = subprocess.check_output([bin, "--version"], stderr=subprocess.STDOUT)
             if result is not None:
@@ -152,7 +156,8 @@ def compute_core_version_key():
             contents += [hashlib.sha1(f.read()).hexdigest()]
     # backend
     libtriton_hash = hashlib.sha1()
-    with open(os.path.join(TRITON_PATH, "_C/libtriton.so"), "rb") as f:
+    ext = "so" if os.name != "nt" else "pyd"
+    with open(os.path.join(TRITON_PATH, "_C" + os.sep + "libtriton." + ext), "rb") as f:
         while True:
             chunk = f.read(1024**2)
             if not chunk:

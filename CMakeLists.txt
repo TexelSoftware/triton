@@ -28,8 +28,13 @@ set(TRITON_CODEGEN_BACKENDS "" CACHE STRING "Enable different codegen backends")
 # used conditionally in this file and by lit tests
 
 # Customized release build type with assertions: TritonRelBuildWithAsserts
-set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "-O2 -g")
-set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "-O2 -g")
+if(NOT MSVC)
+    set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "-O2 -g")
+    set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "-O2 -g")
+else()
+    set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "/Zi /Ob0 /Od /RTC1")
+    set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "/Zi /Ob0 /Od /RTC1")
+endif()
 
 # Default build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -47,7 +52,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 # Third-party
 include_directories(${PYBIND11_INCLUDE_DIR})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -D__STDC_FORMAT_MACROS  -fPIC -std=gnu++17 -fvisibility=hidden -fvisibility-inlines-hidden")
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -D__STDC_FORMAT_MACROS  -fPIC -std=gnu++17 -fvisibility=hidden -fvisibility-inlines-hidden")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -D__STDC_FORMAT_MACROS  /wd4244 /wd4624 /wd4715 /wd4530")
+endif()
 
 if(APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET 11.6)
@@ -154,6 +163,7 @@ if(TRITON_BUILD_PYTHON_MODULE)
 
   if(PYTHON_INCLUDE_DIRS)
     include_directories(${PYTHON_INCLUDE_DIRS})
+    link_directories(${PYTHON_LIB_DIRS})
   else()
     find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
     include_directories(${Python3_INCLUDE_DIRS})
@@ -162,16 +172,6 @@ if(TRITON_BUILD_PYTHON_MODULE)
     add_link_options(${Python3_LINK_OPTIONS})
   endif()
 endif()
-
-# # Triton
-# file(GLOB_RECURSE LIBTRITON_SRC lib/*.cc)
-# if (WIN32 AND TRITON_BUILD_PYTHON_MODULE)
-# Python3_add_library(triton SHARED ${LIBTRITON_SRC} ${PYTHON_SRC})
-# set_target_properties(triton PROPERTIES SUFFIX ".pyd")
-# set_target_properties(triton PROPERTIES PREFIX "lib")
-# else()
-# add_library(triton SHARED ${LIBTRITON_SRC} ${PYTHON_SRC})
-# endif()
 
 # MLIR
 find_package(MLIR REQUIRED CONFIG PATHS ${MLIR_DIR})
@@ -184,7 +184,11 @@ include(AddLLVM)
 include(AddMLIR)
 
 # Disable warnings that show up in external code (gtest;pybind11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-covered-switch-default")
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-covered-switch-default")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
+endif()
 
 include_directories(${MLIR_INCLUDE_DIRS})
 include_directories(${LLVM_INCLUDE_DIRS})
@@ -236,6 +240,7 @@ if(TRITON_BUILD_PYTHON_MODULE)
   )
 
   if(WIN32)
+    set_target_properties(triton PROPERTIES PREFIX "lib" SUFFIX ".pyd")
     target_link_libraries(triton PRIVATE ${LLVM_LIBRARIES} ${CMAKE_DL_LIBS}
       ${TRITON_LIBRARIES}
     )
@@ -273,6 +278,11 @@ if (${CODEGEN_BACKENDS_LEN} GREATER 0)
   foreach(CODEGEN_BACKEND ${TRITON_CODEGEN_BACKENDS})
     add_subdirectory(third_party/${CODEGEN_BACKEND})
   endforeach()
+endif()
+
+if(WIN32)
+  option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
+  option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)
 endif()
 
 add_subdirectory(test)
