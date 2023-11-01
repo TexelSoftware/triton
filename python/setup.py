@@ -101,7 +101,7 @@ def get_thirdparty_packages(triton_cache_path):
         if p.syspath_var_name in os.environ:
             package_dir = os.environ[p.syspath_var_name]
         version_file_path = os.path.join(package_dir, "version.txt")
-        if p.syspath_var_name not in os.environ and\
+        if p.syspath_var_name not in os.environ and p.url and\
            (not os.path.exists(version_file_path) or Path(version_file_path).read_text() != p.url):
             try:
                 shutil.rmtree(package_root_dir)
@@ -115,6 +115,8 @@ def get_thirdparty_packages(triton_cache_path):
             # write version url to package_dir
             with open(os.path.join(package_dir, "version.txt"), "w") as f:
                 f.write(p.url)
+        elif p.syspath_var_name not in os.environ and not p.url:
+            raise RuntimeError(f'{p.syspath_var_name} not set ! Please install {p.package} manually and set {p.syspath_var_name}.')
         if p.include_flag:
             thirdparty_cmake_args.append(f"-D{p.include_flag}={package_dir}/include")
         if p.lib_flag:
@@ -242,6 +244,8 @@ class CMakeBuild(build_ext):
             "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON",
             "-DPYTHON_INCLUDE_DIRS=" + python_include_dir,
         ]
+        if platform.system() == "Windows":
+            cmake_args.append("-DPYTHON_LIB_DIRS=" + os.path.join(sys.prefix, "libs"))
         if lit_dir is not None:
             cmake_args.append("-DLLVM_EXTERNAL_LIT=" + lit_dir)
         cmake_args.extend(thirdparty_cmake_args)
@@ -256,10 +260,8 @@ class CMakeBuild(build_ext):
             cmake_args += ["-DTRITON_CODEGEN_BACKENDS=" + all_codegen_backends]
 
         if platform.system() == "Windows":
+            cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
             cmake_args += [f"-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
-            if sys.maxsize > 2**32:
-                cmake_args += ["-A", "x64"]
-            build_args += ["--", "/m"]
         else:
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
             max_jobs = os.getenv("MAX_JOBS", str(2 * os.cpu_count()))
@@ -299,24 +301,25 @@ class CMakeBuild(build_ext):
         subprocess.check_call(["cmake", "--build", ".", "--target", "mlir-doc"], cwd=cmake_dir)
 
 
-download_and_copy(
-    src_path="bin/ptxas",
-    variable="TRITON_PTXAS_PATH",
-    version="12.1.105",
-    url_func=lambda arch, version: f"https://conda.anaconda.org/nvidia/label/cuda-12.1.1/linux-{arch}/cuda-nvcc-{version}-0.tar.bz2",
-)
-download_and_copy(
-    src_path="bin/cuobjdump",
-    variable="TRITON_CUOBJDUMP_PATH",
-    version="12.1.111",
-    url_func=lambda arch, version: f"https://conda.anaconda.org/nvidia/label/cuda-12.1.1/linux-{arch}/cuda-cuobjdump-{version}-0.tar.bz2",
-)
-download_and_copy(
-    src_path="bin/nvdisasm",
-    variable="TRITON_NVDISASM_PATH",
-    version="12.1.105",
-    url_func=lambda arch, version: f"https://conda.anaconda.org/nvidia/label/cuda-12.1.1/linux-{arch}/cuda-nvdisasm-{version}-0.tar.bz2",
-)
+if platform.system() != "Windows":
+    download_and_copy(
+        src_path="bin/ptxas",
+        variable="TRITON_PTXAS_PATH",
+        version="12.1.105",
+        url_func=lambda arch, version: f"https://conda.anaconda.org/nvidia/label/cuda-12.1.1/linux-{arch}/cuda-nvcc-{version}-0.tar.bz2",
+    )
+    download_and_copy(
+        src_path="bin/cuobjdump",
+        variable="TRITON_CUOBJDUMP_PATH",
+        version="12.1.111",
+        url_func=lambda arch, version: f"https://conda.anaconda.org/nvidia/label/cuda-12.1.1/linux-{arch}/cuda-cuobjdump-{version}-0.tar.bz2",
+    )
+    download_and_copy(
+        src_path="bin/nvdisasm",
+        variable="TRITON_NVDISASM_PATH",
+        version="12.1.105",
+        url_func=lambda arch, version: f"https://conda.anaconda.org/nvidia/label/cuda-12.1.1/linux-{arch}/cuda-nvdisasm-{version}-0.tar.bz2",
+    )
 
 setup(
     name="triton",

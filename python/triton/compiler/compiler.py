@@ -209,6 +209,7 @@ def ptx_to_cubin(ptx: str, target: CudaTargetDescriptor):
     :return: str
     '''
     ptxas, _ = path_to_ptxas()
+    ptxas = '"' + ptxas + '"'
     return compile_ptx_to_cubin(ptx, ptxas, target.capability, target.enable_fp_fusion)
 
 
@@ -609,7 +610,13 @@ class CompiledKernel:
     def __init__(self, fn, so_path, metadata, asm):
         # initialize launcher
         import importlib.util
-        spec = importlib.util.spec_from_file_location("__triton_launcher", so_path)
+        import platform
+        if platform.system() == "Windows":
+            import importlib.machinery
+            loader = importlib.machinery.ExtensionFileLoader("__triton_launcher", so_path)
+            spec = importlib.machinery.ModuleSpec(name="__triton_launcher", loader=loader, origin=so_path)
+        else:
+            spec = importlib.util.spec_from_file_location("__triton_launcher", so_path)
         mod = importlib.util.module_from_spec(spec)
         self.fn = fn
         spec.loader.exec_module(mod)
