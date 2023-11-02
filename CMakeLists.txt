@@ -11,6 +11,9 @@ include(ExternalProject)
 set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+option(HUNTER_STATUS_DEBUG "Print a lot of info" ON)
+
+include(cmake/SetupHunter.cmake)
 
 project(triton)
 include(CTest)
@@ -67,8 +70,9 @@ endif()
 # #########
 if(NOT MLIR_DIR)
   if(NOT LLVM_LIBRARY_DIR)
+    hunter_add_package(LLVM)
     if(WIN32)
-      find_package(LLVM 13 REQUIRED COMPONENTS nvptx amdgpu)
+      find_package(LLVM REQUIRED COMPONENTS nvptx amdgpu)
 
       include_directories(${LLVM_INCLUDE_DIRS})
       separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
@@ -79,7 +83,7 @@ if(NOT MLIR_DIR)
         AMDGPUInfo AMDGPUcodegen
       )
     else()
-      find_package(LLVM 11 REQUIRED COMPONENTS "nvptx;amdgpu")
+      find_package(LLVM REQUIRED COMPONENTS "nvptx;amdgpu")
     endif()
 
     message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
