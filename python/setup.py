@@ -325,7 +325,7 @@ if platform.system() != "Windows":
 
 setup(
     name="triton",
-    version="2.1.0",
+    version="2.1.0+dced22c",
     author="Philippe Tillet",
     author_email="phil@openai.com",
     description="A language and compiler for custom Deep Learning operations",
