@@ -105,7 +105,7 @@ def open_url(url):
 
 
 def get_thirdparty_packages(triton_cache_path):
-    packages = [get_pybind11_package_info(), get_llvm_package_info()]
+    packages = [get_pybind11_package_info()]#, get_llvm_package_info()]
     thirdparty_cmake_args = []
     for p in packages:
         package_root_dir = os.path.join(triton_cache_path, p.package)
@@ -200,7 +200,9 @@ class CMakeBuildPy(build_py):
 class CMakeExtension(Extension):
 
     def __init__(self, name, path, sourcedir=""):
-        Extension.__init__(self, name, sources=[])
+        Extension.__init__(self, name, sources=[],
+                           py_limited_api=True,
+                           define_macros=[('Py_LIMITED_API', '0x030a00f0')])
         self.sourcedir = os.path.abspath(sourcedir)
         self.path = path
 
