@@ -11,7 +11,7 @@ set(
     "Default cache server"
 )
 
-string(COMPARE EQUAL "$ENV{CI}" "True" is_ci)
+string(COMPARE EQUAL "$ENV{CI}" "true" is_ci)
 string(COMPARE EQUAL "$ENV{CPP_PM_BOT_CACHE_GITHUB_PASSWORD}" "" password_is_empty)
 
 if(is_ci AND NOT password_is_empty)
