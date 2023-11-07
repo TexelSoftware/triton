@@ -70,6 +70,7 @@ endif()
 # #########
 if(NOT MLIR_DIR)
   if(NOT LLVM_LIBRARY_DIR)
+    hunter_add_package(ZLIB)
     hunter_add_package(LLVM)
     if(WIN32)
       find_package(LLVM REQUIRED COMPONENTS nvptx amdgpu)
