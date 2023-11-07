@@ -3,7 +3,7 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 set(HUNTER_PREFER_RELEASE_DEPENDENCIES ON CACHE BOOL "Prefer release versions of dependencies added through Hunter.")
 set(HUNTER_CONFIGURATION_TYPES "Release" CACHE STRING "Hunter dependency build variants" FORCE)
 
-set(HUNTER_STATUS_DEBUG ON CACHE BOOL)
+set(HUNTER_STATUS_DEBUG ON)
 
 set(
     HUNTER_CACHE_SERVERS
@@ -13,12 +13,12 @@ set(
     "Default cache server"
 )
 
-#string(COMPARE EQUAL "$ENV{CI}" "true" is_ci)
-#string(COMPARE EQUAL "$ENV{CPP_PM_BOT_CACHE_GITHUB_PASSWORD}" "" password_is_empty)
+string(COMPARE EQUAL "$ENV{CI}" "true" is_ci)
+string(COMPARE EQUAL "$ENV{CPP_PM_BOT_CACHE_GITHUB_PASSWORD}" "" password_is_empty)
 
-#if(is_ci AND NOT password_is_empty)
-option(HUNTER_RUN_UPLOAD "Upload cache binaries" ON)
-#endif()
+if(is_ci AND NOT password_is_empty)
+  option(HUNTER_RUN_UPLOAD "Upload cache binaries" ON)
+endif()
 
 set(
     HUNTER_PASSWORDS_PATH
