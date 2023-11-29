@@ -105,7 +105,9 @@ def open_url(url):
 
 
 def get_thirdparty_packages(triton_cache_path):
-    packages = [get_pybind11_package_info()]#, get_llvm_package_info()]
+    packages = [get_pybind11_package_info()]
+    if not check_env_flag("TRITON_BUILD_WITH_HUNTER"):
+        packages.append(get_llvm_package_info())
     thirdparty_cmake_args = []
     for p in packages:
         package_root_dir = os.path.join(triton_cache_path, p.package)

@@ -187,7 +187,8 @@ include(AddMLIR)
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-covered-switch-default")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
+    # Not yet ready for MSVC
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
 endif()
 
 include_directories(${MLIR_INCLUDE_DIRS})
