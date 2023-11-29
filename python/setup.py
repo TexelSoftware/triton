@@ -200,9 +200,11 @@ class CMakeBuildPy(build_py):
 class CMakeExtension(Extension):
 
     def __init__(self, name, path, sourcedir=""):
-        Extension.__init__(self, name, sources=[],
-                           py_limited_api=True,
-                           define_macros=[('Py_LIMITED_API', '0x030a00f0')])
+        extra_args = {"sources": []}
+        if check_env_flag("TRITON_BUILD_WITH_PY_LIMITED_API"):
+            extra_args['py_limited_api'] = True
+            extra_args['define_macros'] = [('Py_LIMITED_API', '0x03020000')]
+        Extension.__init__(self, name, **extra_args)
         self.sourcedir = os.path.abspath(sourcedir)
         self.path = path
 
@@ -266,6 +268,7 @@ class CMakeBuild(build_ext):
         ]
         if platform.system() == "Windows":
             cmake_args.append("-DPYTHON_LIB_DIRS=" + os.path.join(sys.prefix, "libs"))
+
         if lit_dir is not None:
             cmake_args.append("-DLLVM_EXTERNAL_LIT=" + lit_dir)
         cmake_args.extend(thirdparty_cmake_args)
@@ -296,6 +299,9 @@ class CMakeBuild(build_ext):
                 "-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld",
                 "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld",
             ]
+
+        if check_env_flag("TRITON_BUILD_WITH_HUNTER"):
+            cmake_args.append("-DCMAKE_PROJECT_INCLUDE_BEFORE=" + os.path.join(self.base_dir, "cmake", "SetupHunter.cmake"))
 
         # Note that asan doesn't work with binaries that use the GPU, so this is
         # only useful for tools like triton-opt that don't run code on the GPU.
